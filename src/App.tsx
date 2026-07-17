@@ -48,7 +48,11 @@ export default function App() {
         setPrompt("");
         fetchHistory(); // Refresh history with new video
       } else {
-        setError(data.error || "حدث خطأ أثناء الإنشاء.");
+        let errorMsg = data.error || "حدث خطأ أثناء الإنشاء.";
+        if (data.logs && data.logs.length > 0) {
+          errorMsg += "\n\nسجل الخادم:\n" + data.logs.join("\n");
+        }
+        setError(errorMsg);
       }
     } catch (err) {
       setError("فشل الاتصال بالخادم. حاول مرة أخرى.");
@@ -124,7 +128,7 @@ export default function App() {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm text-center">
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm text-right overflow-x-auto whitespace-pre-wrap" dir="rtl">
               {error}
             </div>
           )}

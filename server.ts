@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.RENDER ? process.env.PORT : 3000;
 
 app.use(express.json());
 
@@ -97,8 +97,8 @@ async function generateVideoRequest(service: string, key: string, prompt: string
   };
 
   if (service === "kling") {
-    url = "https://api.klingai.com/v1/videos/text2video";
-    body = { prompt, model_name: "kling-v1" }; // Standard assumed endpoint
+    url = "https://api-singapore.klingai.com/omni-video/kling-o1";
+    body = { contents: [{ content: prompt }] }; 
   } else if (service === "hailuo") {
     url = "https://api.minimax.chat/v1/video_generation";
     body = { prompt, model: "video-01" };
@@ -125,11 +125,13 @@ async function generateVideoRequest(service: string, key: string, prompt: string
 
   if (!response.ok) {
     let errorReason = "Unknown Error";
-    if (response.status === 401) errorReason = "Invalid API Key";
-    else if (response.status === 402 || response.status === 403) errorReason = "Quota Exceeded";
-    else if (response.status === 429) errorReason = "Rate Limited";
-    else if (response.status >= 500) errorReason = "Server Error";
-    throw new Error(`API Error ${response.status}: ${errorReason} - ${JSON.stringify(data)}`);
+    if (response.status === 401) errorReason = "API key غير صالح";
+    else if (response.status === 402 || response.status === 403) errorReason = "الحصة مستنفدة (Quota Exceeded)";
+    else if (response.status === 429) errorReason = "تم تجاوز الحد المسموح (Rate Limited)";
+    else if (response.status >= 500) errorReason = "خطأ في الخادم (Server Error)";
+    const err = new Error(errorReason);
+    (err as any).status = response.status;
+    throw err;
   }
 
   // Parse task ID based on common API structures
@@ -152,7 +154,7 @@ async function checkVideoStatus(service: string, key: string, taskId: string): P
   };
 
   if (service === "kling") {
-    url = `https://api.klingai.com/v1/videos/text2video/${taskId}`;
+    url = `https://api-singapore.klingai.com/v1/videos/text2video/${taskId}`;
   } else if (service === "hailuo") {
     url = `https://api.minimax.chat/v1/query/video_generation?task_id=${taskId}`;
   } else if (service === "pika") {
@@ -221,8 +223,10 @@ app.post("/api/videos/generate", async (req, res) => {
         backendLogs.push(`[${service}] Key ${i + 1} succeeded. Task ID: ${taskId}`);
         break; // Break key loop
       } catch (err: any) {
-        console.error(`[${service}] Key ${i + 1} failed: ${err.message}`);
-        backendLogs.push(`[${service}] Key ${i + 1} failed: ${err.message}`);
+        const now = new Date().toLocaleTimeString('ar-EG');
+        const logMsg = `اسم الأداة: ${service}\nرقم المفتاح: ${i + 1}\nكود الخطأ: ${err.status || 'Unknown'}\nسبب الفشل: ${err.message}\nوقت الخطأ: ${now}\n-------------------------`;
+        console.error(logMsg);
+        backendLogs.push(logMsg);
         continue; // Try next key
       }
     }
