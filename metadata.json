@@ -1,0 +1,6 @@
+{
+  "name": "AI Video Studio",
+  "description": "Create realistic AI videos from text with Kling, Hailuo, and Pika.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
