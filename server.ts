@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.RENDER ? process.env.PORT : 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
@@ -301,8 +301,10 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  app.listen(PORT as number, "0.0.0.0", () => {
+    console.log(`Server started`);
+    console.log(`Port: ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
